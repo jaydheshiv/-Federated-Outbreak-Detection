@@ -17,6 +17,13 @@ except ImportError:
     GROQ_AVAILABLE = False
     print("⚠️  Groq library not installed. Run: pip install groq")
 
+# Try to import streamlit for accessing secrets
+try:
+    import streamlit as st
+    STREAMLIT_AVAILABLE = True
+except ImportError:
+    STREAMLIT_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -40,8 +47,8 @@ class ChatGPTClinicalAdvisor:
         Initialize Groq Clinical Advisor
         
         Args:
-            api_key: Groq API key (defaults to GROQ_API_KEY env var)
-            model: Groq model id (defaults to CHATGPT_MODEL env var)
+            api_key: Groq API key (defaults to GROQ_API_KEY env var or st.secrets)
+            model: Groq model id (defaults to CHATGPT_MODEL env var or st.secrets)
         """
         if not GROQ_AVAILABLE:
             raise ImportError(
@@ -49,18 +56,46 @@ class ChatGPTClinicalAdvisor:
                 "Install with: pip install groq"
             )
         
-        self.api_key = api_key or os.getenv('GROQ_API_KEY')
+        # Try to get API key from multiple sources (in order of priority):
+        # 1. Explicitly passed parameter
+        # 2. Streamlit secrets (for Streamlit Cloud)
+        # 3. Environment variable (for local .env)
+        self.api_key = api_key
+        
+        if not self.api_key and STREAMLIT_AVAILABLE:
+            try:
+                self.api_key = st.secrets.get("GROQ_API_KEY")
+            except Exception as e:
+                logger.debug(f"Could not read from st.secrets: {e}")
+        
+        if not self.api_key:
+            self.api_key = os.getenv('GROQ_API_KEY')
         
         if not self.api_key:
             raise ValueError(
                 "Groq API key not found. "
-                "Please set GROQ_API_KEY environment variable "
-                "or pass api_key parameter. "
+                "Please set GROQ_API_KEY in:\n"
+                "  - Streamlit Cloud: App menu → Settings → Secrets\n"
+                "  - Local: Create .env file with GROQ_API_KEY=your_key\n"
                 "Get free key at: https://console.groq.com"
             )
 
         self.client = Groq(api_key=self.api_key)
-        self.model = (model or os.getenv("CHATGPT_MODEL") or "llama-3.3-70b-versatile")
+        
+        # Get model from same sources
+        self.model = model
+        if not self.model and STREAMLIT_AVAILABLE:
+            try:
+                self.model = st.secrets.get("GROQ_MODEL")
+            except:
+                pass
+        
+        if not self.model:
+            self.model = os.getenv("GROQ_MODEL") or os.getenv("CHATGPT_MODEL")
+        
+        if not self.model:
+            self.model = "llama-3.3-70b-versatile"
+        
         self.request_count = 0
         self.cache = {}  # Simple in-memory cache
 
