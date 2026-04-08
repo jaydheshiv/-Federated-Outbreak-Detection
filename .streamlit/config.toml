@@ -13,14 +13,9 @@ backgroundColor = "#101820"
 secondaryBackgroundColor = "#101820"
 textColor = "#FFFFFF"
 
-[logger]
-level = "info"
-
 [server]
 port = 8501
 headless = true
 runOnSave = true
 maxUploadSize = 200
 enableCORS = true
-
-# Configure app location for Streamlit Cloud

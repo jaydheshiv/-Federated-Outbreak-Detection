@@ -7,8 +7,25 @@ Detects population-level outbreak patterns
 import numpy as np
 import os
 from typing import Dict, List
-from models.clinic_model import InfectionRiskDetectionModel
-from config import CLINICS, AGGREGATION_METHOD
+
+# Try to import clinic model if available, otherwise use None
+try:
+    from models.clinic_model import InfectionRiskDetectionModel
+except ImportError:
+    # Create a minimal stub if models module not available
+    class InfectionRiskDetectionModel:
+        def __init__(self, clinic_name="", clinic_type=""):
+            self.clinic_name = clinic_name
+            self.clinic_type = clinic_type
+        
+        def get_feature_importance(self, features):
+            return {}
+
+try:
+    from config import CLINICS, AGGREGATION_METHOD
+except ImportError:
+    CLINICS = ["Urban Center", "Rural Area", "Travel Hub"]
+    AGGREGATION_METHOD = "weighted_average"
 
 
 class FederatedOutbreakAggregator:

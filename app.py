@@ -1,17 +1,24 @@
 """
 Federated Outbreak Detection System - Entry Point for Streamlit Cloud
-This file serves as the entry point for Streamlit Cloud deployment
+Execute the federated_health_triage/app.py directly
 """
 
 import sys
 from pathlib import Path
 
-# Add federated_health_triage to path
+# Setup path for imports
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root / "federated_health_triage"))
 
-# Import and run the main app
-from app import *  # noqa: F401, F403
+# Read and execute the actual app file in the current namespace
+with open(project_root / "federated_health_triage" / "app.py") as f:
+    app_code = f.read()
+    
+# Execute in current globals so Streamlit sees everything
+exec(app_code, globals())
 
-if __name__ == "__main__":
-    pass  # Streamlit runs the app automatically
+
+
+
+
+
